@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { FileUp, FileText, ShieldCheck, Languages, Search, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  FileUp,
+  FileText,
+  Search,
+  AlertCircle,
+  CheckCircle2,
+  BookOpen,
+} from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
@@ -25,7 +32,7 @@ export default function App() {
 
   async function extract(event) {
     event.preventDefault();
-    if (!file) return setError("Choose a PDF first.");
+    if (!file) return setError("Select a PDF document first.");
     setBusy(true);
     setError("");
     setResult(null);
@@ -35,7 +42,10 @@ export default function App() {
     body.append("file", file);
 
     try {
-      const response = await fetch(`${API}/api/documents/extract`, { method: "POST", body });
+      const response = await fetch(`${API}/api/documents/extract`, {
+        method: "POST",
+        body,
+      });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Extraction failed.");
       setResult(data);
@@ -50,7 +60,7 @@ export default function App() {
     event.preventDefault();
     const trimmed = query.trim();
     if (!trimmed) {
-      setSearchError("Please enter a question or keyword to search.");
+      setSearchError("Please enter a question or query term.");
       return;
     }
     if (!result?.document_id) {
@@ -83,205 +93,382 @@ export default function App() {
   }
 
   return (
-    <main className="shell">
-      <header className="topbar">
-        <a className="brand" href="#">
-          <span className="brandmark"><ShieldCheck size={20} /></span>
-          CitizenAssist <b>AI</b>
-        </a>
-        <span className="muted">Research demonstrator · CDTM-guided</span>
+    <div className="app-canvas">
+      {/* Editorial Masthead */}
+      <header className="masthead">
+        <div className="masthead-inner">
+          <div className="masthead-brand">
+            <span className="brand-mark">
+              <BookOpen size={18} strokeWidth={2} />
+            </span>
+            <div className="brand-titles">
+              <span className="brand-title">CitizenAssist AI</span>
+              <span className="brand-subtitle">
+                Multilingual Administrative Document Assistance · नागरिक दस्तावेज़ सहायता
+              </span>
+            </div>
+          </div>
+          <div className="masthead-meta">
+            <span className="meta-tag">Research Demonstrator</span>
+            <span className="meta-divider">|</span>
+            <span className="meta-tag">CDTM-Guided</span>
+          </div>
+        </div>
       </header>
 
-      <section className="hero">
-        <div className="eyebrow">ADMINISTRATIVE DOCUMENT UNDERSTANDING</div>
-        <h1>
-          Government information,<br />
-          <span>made easier to understand.</span>
-        </h1>
-        <p>
-          Upload an administrative document to begin. This milestone extracts page-level text and supports BM25 evidence retrieval; simplification, Hindi translation, generative AI answers and CDTM evaluation will follow.
-        </p>
-      </section>
-
-      <section className="panel">
-        <div className="sectionhead">
-          <div>
-            <div className="eyebrow">STEP 01</div>
-            <h2>Upload a document</h2>
-          </div>
-          <span className="pill">PDF extraction</span>
-        </div>
-        <form onSubmit={extract}>
-          <label className="dropzone">
-            <input
-              type="file"
-              accept="application/pdf,.pdf"
-              onChange={(e) => {
-                setFile(e.target.files?.[0] || null);
-                setResult(null);
-                setError("");
-                resetSearch();
-              }}
-            />
-            <span className="uploadicon"><FileUp size={25} /></span>
-            <strong>{file ? file.name : "Choose a PDF document"}</strong>
-            <span className="muted">
-              {file ? `${(file.size / 1048576).toFixed(2)} MB` : "PDF format · Maximum 20 MB"}
-            </span>
-            <span className="link">Browse files</span>
-          </label>
-          {error && <div className="alert error"><AlertCircle size={17} />{error}</div>}
-          <button className="primary" disabled={!file || busy}>
-            {busy ? "Extracting…" : "Extract document text"}
-          </button>
-        </form>
-      </section>
-
-      {result && (
-        <section className="panel result">
-          <div className="resulthead">
-            <div className="filetitle">
-              <span className="fileicon"><FileText /></span>
-              <div>
-                <b>{result.filename}</b>
-                <div className="muted">{result.page_count} page(s) processed · Doc ID: {result.document_id}</div>
-              </div>
-            </div>
-            <span className="success"><CheckCircle2 size={15} /> Extraction complete</span>
-          </div>
-
-          {result.warnings.length > 0 && (
-            <div className="alert warning">
-              <AlertCircle size={17} />
-              <div>{result.warnings.map((w) => <p key={w}>{w}</p>)}</div>
-            </div>
-          )}
-
-          {/* STEP 02: BM25 EVIDENCE RETRIEVAL */}
-          <div className="search-section">
-            <div className="sectionhead" style={{ marginTop: "22px", marginBottom: "12px" }}>
-              <div>
-                <div className="eyebrow">STEP 02</div>
-                <h2>Search document evidence</h2>
-              </div>
-              <span className="pill">BM25 retrieval</span>
-            </div>
-
-            <div className="evidence-disclaimer">
-              <ShieldCheck size={17} className="disclaimer-icon" />
-              <div>
-                <strong>Retrieved Source Evidence:</strong> The passages below are verbatim excerpts extracted directly from the document and ranked using BM25. These are <em>retrieved source passages, not AI-generated answers</em>.
-              </div>
-            </div>
-
-            <form onSubmit={handleSearch} className="search-form">
-              <div className="search-bar">
-                <Search size={18} className="search-icon" />
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Ask a question or enter keywords (e.g. eligibility criteria, landholding, Aadhaar)..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  disabled={searchBusy}
-                />
-                <button type="submit" className="search-button" disabled={searchBusy || !query.trim()}>
-                  {searchBusy ? "Searching…" : "Search"}
-                </button>
-              </div>
-            </form>
-
-            {searchError && (
-              <div className="alert error">
-                <AlertCircle size={17} />
-                <div>{searchError}</div>
-              </div>
-            )}
-
-            {searchBusy && (
-              <div className="search-loading">
-                <span className="muted">Retrieving most relevant source passages with BM25…</span>
-              </div>
-            )}
-
-            {hasSearched && !searchBusy && searchResults && (
-              <div className="search-results">
-                {searchResults.results.length === 0 ? (
-                  <div className="no-results">
-                    <AlertCircle size={18} />
-                    <span>No matching passages found for <em>"{searchResults.query}"</em>. Try different keywords or official scheme terms.</span>
-                  </div>
-                ) : (
-                  <div className="results-list">
-                    <div className="results-summary">
-                      <b>Retrieved Source Passages ({searchResults.results.length} found)</b>
-                      <span className="muted">Ranked by BM25 relevance score</span>
-                    </div>
-                    {searchResults.results.map((item) => (
-                      <article className="evidence-card" key={item.chunk_id}>
-                        <div className="evidence-meta">
-                          <div className="evidence-badges">
-                            <span className="badge page-badge">PAGE {item.page_number}</span>
-                            <span className="badge chunk-badge">ID: {item.chunk_id}</span>
-                          </div>
-                          <span className="badge score-badge">BM25 Score: {item.score}</span>
-                        </div>
-                        <blockquote className="evidence-text">
-                          {item.text}
-                        </blockquote>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* EXTRACTED TEXT (Preserved) */}
-          <div className="sectionhead extracted">
-            <h2>Extracted text</h2>
-            <span className="muted">Page-level output</span>
-          </div>
-          {result.pages.map((page) => (
-            <article className="page" key={page.page_number}>
-              <div className="eyebrow">PAGE {page.page_number}</div>
-              <p>{page.text || "No selectable text found. OCR will be added in a later milestone."}</p>
-            </article>
-          ))}
+      <main className="content-shell">
+        {/* Editorial Lead Section */}
+        <section className="lead-section">
+          <div className="lead-eyebrow">ADMINISTRATIVE SCHEME & GUIDELINE ANALYSIS</div>
+          <h1 className="lead-headline">
+            Uploaded administrative documents, structured for clarity and evidentiary inspection.
+          </h1>
+          <p className="lead-description">
+            Upload public operational guidelines, gazettes, or scheme manuals. This research system
+            extracts page-isolated text, builds lexical indexes, and retrieves source passages to
+            ground citizen inquiries in traceable source-document evidence.
+          </p>
         </section>
-      )}
 
-      <section className="next">
-        <div className="eyebrow">COMING NEXT</div>
-        <h2>Citizen assistance pipeline</h2>
-        <div className="features">
-          <Feature icon={<FileText />} title="Simplification" detail="Convert administrative language into plain English." />
-          <Feature icon={<Languages />} title="Hindi translation" detail="Preserve important facts across languages." />
-          <Feature
-            icon={<Search />}
-            title="Evidence-grounded Q&A"
-            detail="BM25 passage retrieval active. AI-grounded synthesis with citations is planned next."
-            status="BM25 Active · AI Planned"
-          />
-          <Feature icon={<ShieldCheck />} title="CDTM evaluation" detail="Inspect five dimensions and potential issues." />
+        {/* STEP 01: Document Intake */}
+        <section className="civic-card intake-card">
+          <div className="card-header">
+            <div>
+              <span className="card-step">PHASE 01</span>
+              <h2 className="card-title">Document Intake</h2>
+            </div>
+            <span className="status-label">PDF Extraction</span>
+          </div>
+
+          <form onSubmit={extract} className="intake-form">
+            <label className="intake-dropzone">
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={(e) => {
+                  setFile(e.target.files?.[0] || null);
+                  setResult(null);
+                  setError("");
+                  resetSearch();
+                }}
+              />
+              <span className="dropzone-icon">
+                <FileUp size={24} strokeWidth={1.8} />
+              </span>
+              <div className="dropzone-text">
+                <strong className="dropzone-file-name">
+                  {file ? file.name : "Select an administrative PDF document"}
+                </strong>
+                <span className="dropzone-hint">
+                  {file
+                    ? `${(file.size / 1048576).toFixed(2)} MB · Ready for processing`
+                    : "Standard PDF format · Maximum upload limit 20 MB"}
+                </span>
+              </div>
+              <span className="dropzone-action">Browse filesystem</span>
+            </label>
+
+            {error && (
+              <div className="civic-alert alert-error">
+                <AlertCircle size={16} className="alert-icon" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="form-actions">
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={!file || busy}
+              >
+                {busy
+                  ? "Extracting Document..."
+                  : file
+                  ? "Extract Document Text"
+                  : "Select a PDF to enable"}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        {/* Extracted Document Workspace */}
+        {result && (
+          <section className="civic-card workspace-card">
+            {/* Document Summary Docket */}
+            <div className="docket-header">
+              <div className="docket-identity">
+                <div className="docket-icon">
+                  <FileText size={20} strokeWidth={1.8} />
+                </div>
+                <div>
+                  <h3 className="docket-filename">{result.filename}</h3>
+                  <div className="docket-specs">
+                    <span>{result.page_count} page(s) extracted</span>
+                    <span className="specs-sep">•</span>
+                    <span>{result.chunk_count} text partitions</span>
+                    <span className="specs-sep">•</span>
+                    <span className="specs-hash">ID: {result.document_id}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="docket-status-group">
+                <span className="status-pill status-extracted">
+                  <CheckCircle2 size={13} strokeWidth={2} />
+                  Document Successfully Extracted
+                </span>
+              </div>
+            </div>
+
+            {/* Warnings (Amber strictly) */}
+            {result.warnings && result.warnings.length > 0 && (
+              <div className="civic-alert alert-amber">
+                <AlertCircle size={16} className="alert-icon" />
+                <div className="alert-content">
+                  <strong className="alert-title">Document Extraction Notice</strong>
+                  {result.warnings.map((w, idx) => (
+                    <p key={idx} className="alert-message">{w}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Source Fidelity Advisory */}
+            <div className="fidelity-advisory">
+              <div className="advisory-title">
+                <BookOpen size={14} />
+                <span>Source Fidelity Status: <strong>{result.source_fidelity_status}</strong></span>
+              </div>
+              <p className="advisory-text">
+                Extraction completed for selectable text layers. Full factual fidelity evaluation and
+                cross-verification against legal amendments is performed in later CDTM evaluation stages.
+              </p>
+            </div>
+
+            {/* STEP 02: BM25 Document Search */}
+            <div className="search-section">
+              <div className="card-header section-subhead">
+                <div>
+                  <span className="card-step">PHASE 02</span>
+                  <h2 className="card-title">Document Evidence Retrieval</h2>
+                </div>
+                <span className="status-label">BM25 Lexical Ranking</span>
+              </div>
+
+              {/* Explicit Grounding Notice */}
+              <div className="grounding-notice">
+                <p>
+                  <strong>Notice on Retrieved Evidence:</strong> Direct textual retrieval from the uploaded administrative document via BM25. <em>These are retrieved source passages, not AI-generated answers.</em>
+                </p>
+              </div>
+
+              <form onSubmit={handleSearch} className="search-form">
+                <div className="search-input-group">
+                  <Search size={18} className="search-icon" />
+                  <input
+                    type="text"
+                    className="search-field"
+                    placeholder="Enter query terms or scheme provisions (e.g., eligibility criteria, exclusion, landholder, DBT)..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    disabled={searchBusy}
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-secondary"
+                    disabled={searchBusy || !query.trim()}
+                  >
+                    {searchBusy ? "Searching…" : "Retrieve Passages"}
+                  </button>
+                </div>
+              </form>
+
+              {searchError && (
+                <div className="civic-alert alert-error">
+                  <AlertCircle size={16} className="alert-icon" />
+                  <span>{searchError}</span>
+                </div>
+              )}
+
+              {searchBusy && (
+                <div className="state-notice loading-state">
+                  <span>Searching document chunks with BM25 lexical index…</span>
+                </div>
+              )}
+
+              {hasSearched && !searchBusy && searchResults && (
+                <div className="evidence-results-container">
+                  {searchResults.results.length === 0 ? (
+                    <div className="state-notice no-results-state">
+                      <AlertCircle size={16} />
+                      <span>
+                        No matching passages found for query <em>"{searchResults.query}"</em>. Try
+                        alternative keywords or statutory terminology.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="evidence-list">
+                      <div className="evidence-header-bar">
+                        <span className="evidence-count">
+                          Retrieved Source Evidence: <strong>{searchResults.results.length} passage(s)</strong>
+                        </span>
+                        <span className="evidence-criterion">
+                          Top-5 BM25 relevance scores
+                        </span>
+                      </div>
+
+                      {searchResults.results.map((item) => (
+                        <article className="evidence-entry" key={item.chunk_id}>
+                          <header className="evidence-entry-header">
+                            <div className="evidence-locators">
+                              <span className="locator locator-page">Page {item.page_number}</span>
+                              <span className="locator locator-chunk">{item.chunk_id}</span>
+                            </div>
+                            <div className="evidence-score">
+                              <span className="score-label">BM25 Score</span>
+                              <span className="score-value">{item.score}</span>
+                            </div>
+                          </header>
+
+                          <blockquote className="evidence-body">
+                            {item.text}
+                          </blockquote>
+
+                          <footer className="evidence-entry-footer">
+                            <span className="citation-note">
+                              Extracted source passage from {result.filename}, Page {item.page_number}
+                            </span>
+                          </footer>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Extracted Page-by-Page Text (Linear presentation preserved) */}
+            <div className="extracted-section">
+              <div className="card-header section-subhead">
+                <div>
+                  <span className="card-step">RECORD ARCHIVE</span>
+                  <h2 className="card-title">Extracted Document Text</h2>
+                </div>
+                <span className="status-label">Sequential Page View</span>
+              </div>
+
+              <div className="pages-stream">
+                {result.pages.map((page) => (
+                  <article className="page-folio" key={page.page_number}>
+                    <div className="folio-header">
+                      <span className="folio-number">PAGE {String(page.page_number).padStart(2, "0")}</span>
+                      <span className="folio-meta">
+                        {page.text ? `${page.text.length} characters` : "No text content"}
+                      </span>
+                    </div>
+                    <div className="folio-body">
+                      {page.text ? (
+                        <p className="folio-text">{page.text}</p>
+                      ) : (
+                        <p className="folio-empty">
+                          No selectable text found on this page. Optical character recognition (OCR) will be
+                          applied in subsequent milestones.
+                        </p>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* CDTM Trustworthiness Evaluation Pipeline Section */}
+        <section className="civic-card pipeline-card">
+          <div className="card-header">
+            <div>
+              <span className="card-step">EVALUATION FRAMEWORK</span>
+              <h2 className="card-title">CDTM Trustworthiness Evaluation</h2>
+            </div>
+            <span className="status-label">Five Trustworthiness Dimensions</span>
+          </div>
+
+          <p className="pipeline-lead">
+            The Citizen Document Trustworthiness Model (CDTM) evaluates automated assistance systems
+            against five critical dimensions to prevent bureaucratic hallucinations and procedural errors.
+          </p>
+
+          <div className="cdtm-grid">
+            <DimensionCard
+              number="01"
+              title="Source Fidelity"
+              status="Extracting & Grounding Active"
+              statusType="active"
+              detail="Verifies that all extracted statements and retrieved passages correspond strictly to verified clauses in the official source document without extrapolation."
+            />
+            <DimensionCard
+              number="02"
+              title="Exclusion & Rule Completeness"
+              status="Planned Milestone"
+              statusType="planned"
+              detail="Inspects answers for critical administrative exclusions, mandatory criteria, statutory cut-offs, and landholding qualifications to avoid false eligibility claims."
+            />
+            <DimensionCard
+              number="03"
+              title="Plain-Language Clarity"
+              status="Planned Milestone"
+              statusType="planned"
+              detail="Measures readability and structural simplification, transforming convoluted administrative terminology into plain, comprehensible English."
+            />
+            <DimensionCard
+              number="04"
+              title="Cross-Lingual Preservation"
+              status="Planned Milestone"
+              statusType="planned"
+              detail="Evaluates semantic and numeric consistency in Hindi translations, verifying that statutory dates, monetary benefits, and official terms remain intact."
+            />
+            <DimensionCard
+              number="05"
+              title="Procedural Actionability"
+              status="Planned Milestone"
+              statusType="planned"
+              detail="Audits institutional action pathways (application portals, verification authorities, nodal officers) to prevent misdirection of citizen applicants."
+            />
+          </div>
+        </section>
+      </main>
+
+      {/* Editorial Colophon / Footer */}
+      <footer className="colophon">
+        <div className="colophon-inner">
+          <div className="colophon-main">
+            <span className="colophon-title">CitizenAssist AI</span>
+            <p className="colophon-text">
+              An open-source research demonstrator for administrative document simplification and evidentiary grounding.
+              Outputs must always be cross-referenced with official central or state government portals.
+            </p>
+          </div>
+          <div className="colophon-meta">
+            <span>Reference Document: PM-KISAN Operational Guidelines</span>
+            <span>Non-Governmental Academic & Engineering Demonstrator</span>
+          </div>
         </div>
-      </section>
-
-      <footer>
-        <span>CitizenAssist AI · Proof of concept</span>
-        <span>Verify outputs against the original government source.</span>
       </footer>
-    </main>
+    </div>
   );
 }
 
-function Feature({ icon, title, detail, status = "Planned" }) {
+function DimensionCard({ number, title, status, statusType, detail }) {
   return (
-    <article className="feature">
-      <span className="featureicon">{icon}</span>
-      <h3>{title}</h3>
-      <p>{detail}</p>
-      <span className={`pill ${status.includes("Active") ? "active-pill" : ""}`}>{status}</span>
+    <article className="dimension-card">
+      <div className="dimension-header">
+        <span className="dimension-number">{number}</span>
+        <span className={`status-pill ${statusType === "active" ? "status-active" : "status-planned"}`}>
+          {status}
+        </span>
+      </div>
+      <h3 className="dimension-title">{title}</h3>
+      <p className="dimension-detail">{detail}</p>
     </article>
   );
 }
