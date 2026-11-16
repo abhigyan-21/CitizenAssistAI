@@ -3,3 +3,5 @@ uvicorn[standard]>=0.30,<1
 python-multipart>=0.0.9
 pymupdf>=1.24
 pydantic-settings>=2.4
+google-genai>=1.0.0
+groq>=0.11.0

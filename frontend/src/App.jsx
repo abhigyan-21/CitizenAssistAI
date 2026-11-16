@@ -6,6 +6,9 @@ import {
   AlertCircle,
   CheckCircle2,
   BookOpen,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
@@ -16,18 +19,36 @@ export default function App() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // BM25 Retrieval states
+  // BM25 Retrieval states (Phase 02)
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState(null);
   const [searchBusy, setSearchBusy] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Gemini Evidence-Grounded QA states (Phase 03)
+  const [askQuery, setAskQuery] = useState("");
+  const [qaResult, setQaResult] = useState(null);
+  const [qaBusy, setQaBusy] = useState(false);
+  const [qaError, setQaError] = useState("");
+  const [hasAsked, setHasAsked] = useState(false);
+  const [highlightedChunkId, setHighlightedChunkId] = useState(null);
+  const [showSupportingEvidence, setShowSupportingEvidence] = useState(false);
+
   function resetSearch() {
     setQuery("");
     setSearchResults(null);
     setSearchError("");
     setHasSearched(false);
+  }
+
+  function resetQA() {
+    setAskQuery("");
+    setQaResult(null);
+    setQaError("");
+    setHasAsked(false);
+    setHighlightedChunkId(null);
+    setShowSupportingEvidence(false);
   }
 
   async function extract(event) {
@@ -37,6 +58,7 @@ export default function App() {
     setError("");
     setResult(null);
     resetSearch();
+    resetQA();
 
     const body = new FormData();
     body.append("file", file);
@@ -60,7 +82,7 @@ export default function App() {
     event.preventDefault();
     const trimmed = query.trim();
     if (!trimmed) {
-      setSearchError("Please enter a question or query term.");
+      setSearchError("Please enter a query term.");
       return;
     }
     if (!result?.document_id) {
@@ -90,6 +112,54 @@ export default function App() {
     } finally {
       setSearchBusy(false);
     }
+  }
+
+  async function handleAsk(event) {
+    event.preventDefault();
+    const trimmed = askQuery.trim();
+    if (!trimmed) {
+      setQaError("Please enter a question for the document.");
+      return;
+    }
+    if (!result?.document_id) {
+      setQaError("Please upload and extract a document first.");
+      return;
+    }
+
+    setQaBusy(true);
+    setQaError("");
+    setHighlightedChunkId(null);
+
+    try {
+      const response = await fetch(`${API}/api/documents/${result.document_id}/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: trimmed,
+          top_k: 5,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "Failed to generate grounded answer.");
+      setQaResult(data);
+      setHasAsked(true);
+      setShowSupportingEvidence(true);
+    } catch (err) {
+      setQaError(err.message || "Could not connect to the AI Q&A endpoint.");
+    } finally {
+      setQaBusy(false);
+    }
+  }
+
+  function scrollToEvidence(chunkId) {
+    setHighlightedChunkId(chunkId);
+    setShowSupportingEvidence(true);
+    setTimeout(() => {
+      const element = document.getElementById(`evidence-${chunkId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 60);
   }
 
   return (
@@ -150,6 +220,7 @@ export default function App() {
                   setResult(null);
                   setError("");
                   resetSearch();
+                  resetQA();
                 }}
               />
               <span className="dropzone-icon">
@@ -245,7 +316,7 @@ export default function App() {
               </p>
             </div>
 
-            {/* STEP 02: BM25 Document Search */}
+            {/* PHASE 02: BM25 Document Evidence Retrieval */}
             <div className="search-section">
               <div className="card-header section-subhead">
                 <div>
@@ -347,6 +418,186 @@ export default function App() {
               )}
             </div>
 
+            {/* PHASE 03: AI-Assisted Document Understanding (Milestone 5) */}
+            <div className="qa-section">
+              <div className="card-header section-subhead">
+                <div>
+                  <span className="card-step">PHASE 03</span>
+                  <h2 className="card-title">AI-Assisted Document Understanding</h2>
+                </div>
+                <span className="status-label status-gemini">
+                  <Sparkles size={13} />
+                  Gemini Evidence-Grounded
+                </span>
+              </div>
+
+              <div className="grounding-notice ai-grounding-notice">
+                <p>
+                  <strong>Evidentiary Grounding Protocol:</strong> Answers are formulated exclusively from the
+                  top retrieved passages of this document. If the document does not contain verifiable facts to answer,
+                  the model is instructed to explicitly abstain.
+                </p>
+              </div>
+
+              <form onSubmit={handleAsk} className="qa-form">
+                <div className="search-input-group qa-input-group">
+                  <Search size={18} className="search-icon" />
+                  <input
+                    type="text"
+                    className="search-field"
+                    placeholder="Ask a natural-language question (e.g., What is the definition of a beneficiary family?)..."
+                    value={askQuery}
+                    onChange={(e) => setAskQuery(e.target.value)}
+                    disabled={qaBusy}
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-ask"
+                    disabled={qaBusy || !askQuery.trim()}
+                  >
+                    {qaBusy ? "Consulting Document…" : "Ask Document"}
+                  </button>
+                </div>
+              </form>
+
+              {qaError && (
+                <div className="civic-alert alert-error">
+                  <AlertCircle size={16} className="alert-icon" />
+                  <span>{qaError}</span>
+                </div>
+              )}
+
+              {qaBusy && (
+                <div className="state-notice loading-state">
+                  <span>Consulting document passages and formulating evidence-grounded answer…</span>
+                </div>
+              )}
+
+              {hasAsked && !qaBusy && qaResult && (
+                <div className="qa-response-container">
+                  {/* Abstention State */}
+                  {qaResult.insufficient_evidence ? (
+                    <div className="civic-alert alert-amber abstention-card">
+                      <AlertCircle size={18} className="alert-icon" />
+                      <div className="alert-content">
+                        <strong className="alert-title">Insufficient Evidence in Document</strong>
+                        <p className="abstention-text">{qaResult.answer}</p>
+                        <span className="abstention-hint">
+                          The system abstained because the uploaded text partitions do not contain verifiable statements
+                          to answer this question without speculation.
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Grounded Answer Card */
+                    <article className="grounded-answer-card">
+                      <header className="answer-header">
+                        <div className="answer-title-group">
+                          <span className="answer-badge">
+                            <Sparkles size={13} />
+                            Grounded Answer
+                          </span>
+                          <span className="model-tag">
+                            Model: {qaResult.provider_info?.model || "Gemini"}
+                          </span>
+                        </div>
+                        <span className="disclaimer-chip">
+                          Subject to source citations
+                        </span>
+                      </header>
+
+                      <div className="answer-body">
+                        <p className="answer-text">{qaResult.answer}</p>
+                      </div>
+
+                      {/* Clickable [Page N] Citation Badges */}
+                      {qaResult.citations && qaResult.citations.length > 0 && (
+                        <div className="citations-tray">
+                          <span className="citations-tray-label">Source Document Citations:</span>
+                          <div className="citation-pills-list">
+                            {qaResult.citations.map((cite) => (
+                              <button
+                                key={cite.chunk_id}
+                                type="button"
+                                className={`citation-pill ${
+                                  highlightedChunkId === cite.chunk_id ? "citation-pill-active" : ""
+                                }`}
+                                onClick={() => scrollToEvidence(cite.chunk_id)}
+                                title={`Click to inspect passage on Page ${cite.page_number} (Chunk: ${cite.chunk_id})`}
+                              >
+                                [Page {cite.page_number}]
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </article>
+                  )}
+
+                  {/* Supporting Evidence Drawer (Collapsible) */}
+                  {qaResult.retrieved_evidence && qaResult.retrieved_evidence.length > 0 && (
+                    <div className="supporting-evidence-section">
+                      <button
+                        type="button"
+                        className="btn-toggle-evidence"
+                        onClick={() => setShowSupportingEvidence(!showSupportingEvidence)}
+                      >
+                        <span>
+                          {showSupportingEvidence
+                            ? "Hide Supporting Evidence Passages"
+                            : "Inspect Supporting Evidence Passages"}
+                          {" "}({qaResult.retrieved_evidence.length} retrieved chunks)
+                        </span>
+                        {showSupportingEvidence ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </button>
+
+                      {showSupportingEvidence && (
+                        <div className="evidence-passages-drawer">
+                          {qaResult.retrieved_evidence.map((item) => {
+                            const isCited = qaResult.cited_chunk_ids?.includes(item.chunk_id);
+                            const isHighlighted = highlightedChunkId === item.chunk_id;
+                            return (
+                              <article
+                                id={`evidence-${item.chunk_id}`}
+                                key={item.chunk_id}
+                                className={`evidence-entry ${
+                                  isCited ? "evidence-entry-cited" : ""
+                                } ${isHighlighted ? "evidence-entry-highlighted" : ""}`}
+                              >
+                                <header className="evidence-entry-header">
+                                  <div className="evidence-locators">
+                                    <span className="locator locator-page">Page {item.page_number}</span>
+                                    <span className="locator locator-chunk">{item.chunk_id}</span>
+                                    {isCited && (
+                                      <span className="locator locator-cited-tag">Cited in Answer</span>
+                                    )}
+                                  </div>
+                                  <div className="evidence-score">
+                                    <span className="score-label">BM25 Score</span>
+                                    <span className="score-value">{item.score}</span>
+                                  </div>
+                                </header>
+
+                                <blockquote className="evidence-body">
+                                  {item.text}
+                                </blockquote>
+
+                                <footer className="evidence-entry-footer">
+                                  <span className="citation-note">
+                                    Extracted source passage from {result.filename}, Page {item.page_number}
+                                  </span>
+                                </footer>
+                              </article>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Extracted Page-by-Page Text (Linear presentation preserved) */}
             <div className="extracted-section">
               <div className="card-header section-subhead">
@@ -402,7 +653,7 @@ export default function App() {
             <DimensionCard
               number="01"
               title="Source Fidelity"
-              status="Extracting & Grounding Active"
+              status="Grounded QA Active"
               statusType="active"
               detail="Verifies that all extracted statements and retrieved passages correspond strictly to verified clauses in the official source document without extrapolation."
             />
