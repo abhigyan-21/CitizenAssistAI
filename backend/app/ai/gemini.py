@@ -131,3 +131,36 @@ class GeminiProvider(AIProvider):
                 model_name=self.model_name,
                 raw_response={"raw_text": raw_text, "parse_error": str(exc)},
             )
+
+    async def generate_basic_answer(
+        self,
+        question: str,
+        passages: list[dict],
+    ) -> str:
+        """
+        Generate an unconstrained baseline generative answer without CDTM citation enforcement or claim auditing.
+        """
+        passage_texts = "\n\n".join(
+            p.get("text", "").strip() for p in passages if p.get("text")
+        )
+        prompt = (
+            "You are a helpful AI assistant answering citizen questions based on an administrative document.\n"
+            "Provide a direct, helpful, and natural response to the question using the provided context.\n\n"
+            f"DOCUMENT CONTEXT:\n{passage_texts}\n\n"
+            f"CITIZEN QUESTION:\n{question}\n\n"
+            "Answer clearly and helpfully in English."
+        )
+        try:
+            response = await asyncio.wait_for(
+                self.client.aio.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                ),
+                timeout=self.timeout_seconds,
+            )
+            return (response.text or "").strip() or "No response generated."
+        except asyncio.TimeoutError as exc:
+            raise TimeoutError(f"Gemini request timed out after {self.timeout_seconds}s") from exc
+        except Exception as exc:
+            logger.error("Gemini basic generation error: %s", exc)
+            raise

@@ -41,3 +41,15 @@ class AIProvider(ABC):
         Returns a structured GroundedAnswerResponse.
         """
         pass
+
+    async def generate_basic_answer(
+        self,
+        question: str,
+        passages: list[dict],
+    ) -> str:
+        """
+        Generate an ordinary baseline response without CDTM grounding enforcement
+        or claim-level citation auditing.
+        """
+        grounded = await self.generate_grounded_answer(question=question, passages=passages)
+        return grounded.answer

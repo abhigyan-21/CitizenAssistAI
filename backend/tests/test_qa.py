@@ -73,6 +73,31 @@ class TestQAService(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(citation["page_number"], 1)
         self.assertEqual(citation["filename"], "Guidelines.pdf")
         self.assertIn("income support", citation["text"])
+        self.assertEqual(result["mode"], "cdtm")
+
+    async def test_basic_mode_unconstrained_generation(self):
+        """Basic Mode generates baseline answer without citation enforcement."""
+        mock_provider = MockAIProvider(
+            mock_answer="The scheme provides Rs 6,000 per year.",
+            mock_insufficient_evidence=False,
+            mock_cited_chunk_ids=["test-doc-001-p0001-c001"],
+            mock_model_name="mock-model",
+        )
+        service = QAService(ai_provider=mock_provider)
+
+        result = await service.answer_question(
+            document_id=self.doc_id,
+            question="What is the financial benefit of the scheme?",
+            top_k=3,
+            mode="basic",
+        )
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result["mode"], "basic")
+        self.assertEqual(result["cited_chunk_ids"], [])
+        self.assertEqual(result["citations"], [])
+        self.assertIn("Basic unverified answer", result["answer"])
+        self.assertEqual(result["provider_info"]["mode"], "basic_unverified")
 
     async def test_citation_validation_filters_unretrieved_chunks(self):
         """Test 3: Reject fabricated or unretrieved chunk IDs."""
@@ -128,16 +153,21 @@ class TestQAService(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result)
 
     async def test_missing_api_key_raises_runtime_error(self):
-        """Test 6: Missing Gemini API key raises RuntimeError (handled as 503 by route)."""
-        original_key = settings.gemini_api_key
+        """Test 6: Missing API key raises RuntimeError (handled as 503 by route).
+        Now that Groq is the default provider, this test validates GROQ_API_KEY handling.
+        """
+        original_provider = settings.ai_provider
+        original_groq_key = settings.groq_api_key
         try:
-            settings.gemini_api_key = None
+            settings.ai_provider = "groq"
+            settings.groq_api_key = None
             service = QAService(ai_provider=None)
             with self.assertRaises(RuntimeError) as ctx:
                 service.get_provider()
-            self.assertIn("GEMINI_API_KEY is not configured", str(ctx.exception))
+            self.assertIn("GROQ_API_KEY", str(ctx.exception))
         finally:
-            settings.gemini_api_key = original_key
+            settings.ai_provider = original_provider
+            settings.groq_api_key = original_groq_key
 
     async def test_empty_question_raises_value_error(self):
         """Test 7: Empty question raises ValueError."""
@@ -196,6 +226,40 @@ class TestAskRoute(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(res["insufficient_evidence"])
         self.assertEqual(len(res["citations"]), 1)
         self.assertEqual(res["citations"][0]["page_number"], 1)
+
+    async def test_ask_endpoint_default_mode_is_cdtm(self):
+        """Ask endpoint defaults to CDTM mode with grounded citations."""
+        mock_provider = MockAIProvider(
+            mock_answer="CDTM verified grounded answer.",
+            mock_insufficient_evidence=False,
+            mock_cited_chunk_ids=["route-doc-001-p0001-c001"],
+            mock_model_name="gemini-3.8-flash",
+        )
+        set_qa_service(QAService(ai_provider=mock_provider))
+
+        req = AskRequest(query="Aadhaar bank account", top_k=2)
+        res = await ask_document(self.doc_id, req)
+
+        self.assertEqual(res["mode"], "cdtm")
+        self.assertEqual(len(res["citations"]), 1)
+
+    async def test_ask_endpoint_basic_mode(self):
+        """Ask endpoint with mode='basic' returns unconstrained answer without citations."""
+        mock_provider = MockAIProvider(
+            mock_answer="Basic response from provider.",
+            mock_insufficient_evidence=False,
+            mock_model_name="gemini-3.8-flash",
+        )
+        set_qa_service(QAService(ai_provider=mock_provider))
+
+        req = AskRequest(query="Aadhaar bank account", top_k=2, mode="basic")
+        res = await ask_document(self.doc_id, req)
+
+        self.assertEqual(res["mode"], "basic")
+        self.assertEqual(res["cited_chunk_ids"], [])
+        self.assertEqual(res["citations"], [])
+        self.assertIn("Basic unverified answer", res["answer"])
+        self.assertEqual(res["provider_info"]["mode"], "basic_unverified")
 
     async def test_ask_endpoint_404_missing_doc(self):
         set_qa_service(QAService(ai_provider=MockAIProvider()))

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Any
 import logging
 
@@ -67,14 +68,12 @@ class QAService:
         document_id: str,
         question: str,
         top_k: int = 5,
+        mode: str = "cdtm",
     ) -> dict[str, Any] | None:
         """
-        Execute the end-to-end grounded question answering pipeline:
-        1. Validate document presence.
-        2. Retrieve relevant chunks via BM25.
-        3. Invoke AI provider with strict grounding context.
-        4. Validate citations against actually retrieved chunks.
-        5. Return structured, verified response.
+        Execute the question answering pipeline:
+        - In 'cdtm' mode: grounded answering with BM25 passages, strict citation enforcement, and validation.
+        - In 'basic' mode: standard baseline generative response using the same passages without citation enforcement or claim auditing.
         """
         # 1. Validate document exists in store
         doc = get_document(document_id)
@@ -104,6 +103,7 @@ class QAService:
                     "The uploaded administrative document does not contain passages "
                     "relevant to this question. No verifiable evidence was found."
                 ),
+                "mode": mode,
                 "insufficient_evidence": True,
                 "cited_chunk_ids": [],
                 "citations": [],
@@ -117,7 +117,46 @@ class QAService:
         # 3. Resolve AI provider
         provider = self.get_provider()
 
-        # 4. Generate grounded response
+        # Baseline Basic Mode: unconstrained generation without citation enforcement
+        if mode == "basic":
+            basic_answer = await provider.generate_basic_answer(
+                question=clean_question,
+                passages=retrieved_passages,
+            )
+            provider_name = (
+                "google-gemini" if isinstance(provider, GeminiProvider)
+                else "groq" if isinstance(provider, GroqProvider)
+                else "mock"
+            )
+            model_name = getattr(provider, "model_name", "AI")
+            return {
+                "document_id": document_id,
+                "question": clean_question,
+                "answer": basic_answer,
+                "mode": "basic",
+                "insufficient_evidence": False,
+                "cited_chunk_ids": [],
+                "citations": [],
+                "retrieved_evidence": retrieved_passages,
+                "provider_info": {
+                    "provider": provider_name,
+                    "model": model_name,
+                    "mode": "basic_unverified",
+                },
+                "reproducibility": {
+                    "document_id": document_id,
+                    "filename": doc.get("filename", ""),
+                    "query": clean_question,
+                    "mode": "basic",
+                    "provider": provider_name,
+                    "model": model_name,
+                    "top_k": bounded_top_k,
+                    "retrieved_passages_count": len(retrieved_passages),
+                    "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                },
+            }
+
+        # 4. Generate grounded response (CDTM mode)
         generation = await provider.generate_grounded_answer(
             question=clean_question,
             passages=retrieved_passages,
@@ -158,16 +197,35 @@ class QAService:
                 "retrieved passages because no valid document citations were provided.]"
             )
 
+        cdtm_provider_name = (
+            "google-gemini" if isinstance(provider, GeminiProvider)
+            else "groq" if isinstance(provider, GroqProvider)
+            else "mock"
+        )
+        cdtm_model_name = generation.model_name or settings.gemini_model
+
         return {
             "document_id": document_id,
             "question": clean_question,
             "answer": answer_text,
+            "mode": "cdtm",
             "insufficient_evidence": insufficient,
             "cited_chunk_ids": valid_cited_ids,
             "citations": validated_citations,
             "retrieved_evidence": retrieved_passages,
             "provider_info": {
-                "provider": "google-gemini" if isinstance(provider, GeminiProvider) else "mock",
-                "model": generation.model_name or settings.gemini_model,
+                "provider": cdtm_provider_name,
+                "model": cdtm_model_name,
+            },
+            "reproducibility": {
+                "document_id": document_id,
+                "filename": doc.get("filename", ""),
+                "query": clean_question,
+                "mode": "cdtm",
+                "provider": cdtm_provider_name,
+                "model": cdtm_model_name,
+                "top_k": bounded_top_k,
+                "retrieved_passages_count": len(retrieved_passages),
+                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             },
         }

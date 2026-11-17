@@ -54,3 +54,20 @@ class MockAIProvider(AIProvider):
             model_name=self.mock_model_name,
             raw_response={"mock": True},
         )
+
+    async def generate_basic_answer(
+        self,
+        question: str,
+        passages: list[dict],
+    ) -> str:
+        self.call_count += 1
+        self.last_question = question
+        self.last_passages = passages
+
+        if self.simulate_timeout:
+            raise TimeoutError("Simulated Gemini provider timeout")
+
+        if self.simulate_error:
+            raise self.simulate_error
+
+        return f"Basic unverified answer for: {question}. {self.mock_answer}"

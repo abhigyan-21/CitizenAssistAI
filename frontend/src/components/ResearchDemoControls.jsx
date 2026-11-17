@@ -1,0 +1,142 @@
+import { useState } from "react";
+import { FlaskConical, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+
+const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+
+const DEMO_BUTTONS = [
+  {
+    dimension: "source_fidelity",
+    label: "Demonstrate Extraction Warning",
+    description: "Evaluates an incomplete PDF extraction containing an image-only page lacking selectable text.",
+    requiresDoc: false,
+  },
+  {
+    dimension: "semantic_fidelity",
+    label: "Demonstrate Omitted Condition",
+    description: "Evaluates a plain-language simplification that deliberately omits 'minor children' from family eligibility.",
+    requiresDoc: true,
+  },
+  {
+    dimension: "evidence_grounding",
+    label: "Demonstrate Unsupported Claim",
+    description: "Evaluates an answer claiming an ungrounded monthly cash transfer against real store chunks.",
+    requiresDoc: true,
+  },
+  {
+    dimension: "cross_lingual_fidelity",
+    label: "Demonstrate Translation Divergence",
+    description: "Evaluates a Hindi translation with a deliberately inverted exclusion condition.",
+    requiresDoc: true,
+  },
+  {
+    dimension: "accessibility",
+    label: "Demonstrate Complex Language",
+    description: "Evaluates dense bureaucratic prose with unexplained acronyms (DBT, UT, KCC).",
+    requiresDoc: false,
+  },
+];
+
+export default function ResearchDemoControls({ documentId }) {
+  const [activeDemo, setActiveDemo] = useState(null);
+  const [demoResult, setDemoResult] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleTriggerDemo(demoItem) {
+    if (demoItem.requiresDoc && !documentId) {
+      setError(`Please upload and extract a PDF first to run the ${demoItem.label}.`);
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    setActiveDemo(demoItem.dimension);
+    setDemoResult(null);
+
+    try {
+      const res = await fetch(`${API}/api/demo/evaluate-failure`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dimension: demoItem.dimension,
+          document_id: documentId || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Demonstration run failed.");
+      setDemoResult(data);
+    } catch (err) {
+      setError(err.message || "Could not execute demonstration.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="research-demo-section">
+      <header className="research-demo-header">
+        <div className="demo-header-title">
+          <FlaskConical size={16} className="flask-icon" />
+          <h5>Research Demonstration Controls (Controlled Failure Testing)</h5>
+        </div>
+        <span className="demo-isolated-tag">Isolated from Live Data — Evaluates Actual Checking Logic</span>
+      </header>
+
+      <p className="demo-section-intro">
+        Trigger intentional failure fixtures to test whether CDTM evaluators successfully detect omissions,
+        ungrounded claims, or translation divergences. Demonstrations run through real evaluation logic and report
+        detection honestly. Live document chunks are never modified.
+      </p>
+
+      <div className="demo-buttons-grid">
+        {DEMO_BUTTONS.map((btn) => (
+          <button
+            key={btn.dimension}
+            type="button"
+            className={`btn-demo-trigger ${activeDemo === btn.dimension && busy ? "btn-demo-busy" : ""}`}
+            onClick={() => handleTriggerDemo(btn)}
+            disabled={busy}
+            title={btn.description}
+          >
+            <span className="btn-demo-title">{btn.label}</span>
+            <span className="btn-demo-desc">{btn.description}</span>
+          </button>
+        ))}
+      </div>
+
+      {error && (
+        <div className="civic-alert alert-amber demo-error-box">
+          <AlertTriangle size={15} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {demoResult && (
+        <div className="demo-result-card">
+          <div className="demo-result-header">
+            <div className="demo-result-title">
+              <strong>Controlled Demonstration Result:</strong> {demoResult.dimension.replace("_", " ").toUpperCase()}
+            </div>
+            <div className={`demo-detection-pill ${demoResult.detection_observed ? "detection-success" : "detection-missed"}`}>
+              {demoResult.detection_observed ? (
+                <>
+                  <CheckCircle2 size={13} strokeWidth={2} /> Failure Detected
+                </>
+              ) : (
+                <>
+                  <XCircle size={13} strokeWidth={2} /> Failure Not Detected
+                </>
+              )}
+            </div>
+          </div>
+
+          <p className="demo-summary-text">{demoResult.summary}</p>
+
+          <div className="demo-metadata-note">
+            <em>Research Note: This result was generated by a controlled test fixture and does not reflect a live extraction or generation error in the active document.</em>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}

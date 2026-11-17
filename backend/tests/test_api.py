@@ -3,7 +3,17 @@ import unittest
 from fastapi import HTTPException, UploadFile
 import pymupdf
 
-from app.api.routes import SearchRequest, extract_document, search_document_by_id, search_document_body
+from app.api.routes import (
+    DemoFailureRequest,
+    GroundingEvaluationRequest,
+    SearchRequest,
+    evaluate_document_grounding,
+    evaluate_failure_demo,
+    extract_document,
+    get_document_evaluation,
+    search_document_by_id,
+    search_document_body,
+)
 from app.document.store import clear_documents, get_document, save_document, search_document
 
 
@@ -120,6 +130,41 @@ class TestAPIRoutes(unittest.IsolatedAsyncioTestCase):
         res = await search_document_body(SearchRequest(document_id="d_body", query="Aadhaar", top_k=1))
         self.assertEqual(res["total_results"], 1)
         self.assertEqual(res["results"][0]["document_id"], "d_body")
+
+    async def test_get_document_evaluation_404_missing(self):
+        with self.assertRaises(HTTPException) as ctx:
+            await get_document_evaluation("nonexistent-doc")
+        self.assertEqual(ctx.exception.status_code, 404)
+
+    async def test_get_document_evaluation_success(self):
+        chunks = [
+            {"chunk_id": "c1", "document_id": "d_eval", "page_number": 1, "text": "Sample text for evaluation."}
+        ]
+        save_document("d_eval", "sample.pdf", chunks)
+        report = await get_document_evaluation("d_eval")
+        self.assertEqual(report.document_id, "d_eval")
+        self.assertEqual(report.source_fidelity.status, "not_evaluated")
+        self.assertEqual(report.citizen_accessibility.status, "not_evaluated")
+
+    async def test_evaluate_failure_demo_source_fidelity(self):
+        req = DemoFailureRequest(dimension="source_fidelity")
+        res = await evaluate_failure_demo(req)
+        self.assertEqual(res["dimension"], "source_fidelity")
+        self.assertTrue(res["controlled_demo"])
+        self.assertTrue(res["detection_observed"])
+
+    async def test_evaluate_failure_demo_accessibility(self):
+        req = DemoFailureRequest(dimension="accessibility")
+        res = await evaluate_failure_demo(req)
+        self.assertEqual(res["dimension"], "accessibility")
+        self.assertTrue(res["controlled_demo"])
+        self.assertTrue(res["detection_observed"])
+
+    async def test_evaluate_failure_demo_missing_document_id(self):
+        req = DemoFailureRequest(dimension="evidence_grounding")
+        with self.assertRaises(HTTPException) as ctx:
+            await evaluate_failure_demo(req)
+        self.assertEqual(ctx.exception.status_code, 400)
 
 
 if __name__ == "__main__":
