@@ -48,6 +48,7 @@ class QAService:
             return GroqProvider(
                 api_key=settings.groq_api_key.strip(),
                 model_name=settings.groq_model,
+                fallback_model_name=settings.groq_fallback_model,
                 timeout_seconds=settings.groq_timeout_seconds,
             )
 

@@ -11,7 +11,8 @@ class Settings(BaseSettings):
 
     # Groq AI Provider configuration (Milestone 6)
     groq_api_key: str | None = None
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "openai/gpt-oss-20b"
+    groq_fallback_model: str = "qwen/qwen3.8-27b"
     groq_timeout_seconds: float = 30.0
 
     # Gemini AI Provider configuration (Milestone 5)

@@ -51,12 +51,14 @@ class GroqProvider(AIProvider):
     def __init__(
         self,
         api_key: str,
-        model_name: str = "llama-3.3-70b-versatile",
+        model_name: str = "openai/gpt-oss-20b",
+        fallback_model_name: str = "qwen/qwen3.8-27b",
         timeout_seconds: float = 30.0,
     ) -> None:
         if not api_key or not api_key.strip():
             raise ValueError("GROQ_API_KEY must be provided to initialise GroqProvider.")
         self.model_name = model_name
+        self.fallback_model_name = fallback_model_name
         self.timeout_seconds = timeout_seconds
         # max_retries=0: surface errors immediately without hidden retry latency
         self.client = AsyncGroq(
@@ -123,7 +125,11 @@ class GroqProvider(AIProvider):
                     timeout=self.timeout_seconds,
                 )
             except (groq_sdk.RateLimitError, groq_sdk.BadRequestError) as sec_exc:
-                secondary_model = "llama-3.1-8b-instant" if self.model_name != "llama-3.1-8b-instant" else "llama-3.3-70b-versatile"
+                secondary_model = (
+                    self.fallback_model_name
+                    if self.model_name != self.fallback_model_name
+                    else "openai/gpt-oss-120b"
+                )
                 logger.warning("Primary model failed after retry. Attempting secondary model '%s'...", secondary_model)
                 kwargs_sec = dict(kwargs, model=secondary_model)
                 try:
