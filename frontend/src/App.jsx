@@ -32,8 +32,14 @@ export default function App() {
     if (next) {
       setDemoAlert("demo mode active");
       setTimeout(() => setDemoAlert(""), 6000);
+      if (result?.document_id) {
+        fetchEvaluation(result.document_id, true);
+      }
     } else {
       setDemoAlert("");
+      if (result?.document_id) {
+        fetchEvaluation(result.document_id, false);
+      }
     }
   }
 
@@ -112,11 +118,12 @@ export default function App() {
     setTranslationIssues(0);
   }
 
-  async function fetchEvaluation(docId) {
+  async function fetchEvaluation(docId, isDemo = demoMode) {
     if (!docId) return;
     setIsRefreshingEval(true);
     try {
-      const res = await fetch(`${API}/api/documents/${docId}/evaluation`);
+      const url = `${API}/api/documents/${docId}/evaluation${isDemo ? "?demo=true" : ""}`;
+      const res = await fetch(url);
       const data = await res.json();
       if (res.ok) {
         setEvaluationReport(data);
@@ -507,7 +514,7 @@ export default function App() {
                   <EvaluationEngineView
                     documentId={result.document_id}
                     evaluationReport={evaluationReport}
-                    onRefresh={() => fetchEvaluation(result.document_id)}
+                    onRefresh={() => fetchEvaluation(result.document_id, demoMode)}
                     isRefreshing={isRefreshingEval}
                   />
                 </div>
@@ -519,7 +526,7 @@ export default function App() {
                   <CDTMDashboard
                     documentId={result.document_id}
                     evaluationReport={evaluationReport}
-                    onRefresh={() => fetchEvaluation(result.document_id)}
+                    onRefresh={() => fetchEvaluation(result.document_id, demoMode)}
                     isRefreshing={isRefreshingEval}
                   />
                 </div>
