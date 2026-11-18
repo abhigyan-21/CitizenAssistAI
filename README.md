@@ -21,7 +21,7 @@ A research prototype that helps citizens understand Indian administrative and go
 | **Phase 8** | **Comparative Demonstration Showcase** | Side-by-side comparison of Naive/Basic RAG vs. CDTM-Guided Governance, highlighting hallucination interception and citation grounding. | ✅ Complete |
 | **Phase 9** | **Empirical Validation & User Study** | Structured empirical user evaluation on authentic public schemes (PM-KISAN, Sukanya Samriddhi). | ⬜ Planned |
 
-**Automated Tests:** **113 backend unit tests**, 100% passing.  
+**Automated Tests:** **114 backend unit tests**, 100% passing.  
 **Frontend Interface:** Modern 8-Phase Guided Walkthrough UI with step-by-step navigation, interactive workbenches, and Civic Editorial design system.
 
 ---

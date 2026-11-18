@@ -146,6 +146,18 @@ class TestAPIRoutes(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(report.source_fidelity.status, "not_evaluated")
         self.assertEqual(report.citizen_accessibility.status, "not_evaluated")
 
+    async def test_get_document_evaluation_demo_mode(self):
+        chunks = [
+            {"chunk_id": "c1", "document_id": "d_eval_demo", "page_number": 1, "text": "Sukanya Samriddhi account rules."}
+        ]
+        save_document("d_eval_demo", "sukanya.pdf", chunks)
+        report = await get_document_evaluation("d_eval_demo", demo=True)
+        self.assertEqual(report.document_id, "d_eval_demo")
+        self.assertEqual(report.source_fidelity.status, "verified")
+        self.assertEqual(report.evidence_grounding.status, "grounded")
+        self.assertEqual(report.semantic_fidelity.status, "verified")
+        self.assertEqual(report.cross_lingual_fidelity.status, "verified")
+
     async def test_evaluate_failure_demo_source_fidelity(self):
         req = DemoFailureRequest(dimension="source_fidelity")
         res = await evaluate_failure_demo(req)

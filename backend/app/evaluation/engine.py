@@ -26,6 +26,7 @@ from app.evaluation.accessibility import (
 )
 from app.evaluation.cross_lingual_fidelity import CrossLingualFidelityResult
 from app.evaluation.evidence_grounding import (
+    ClaimSupportItem,
     EvidenceGroundingEvaluator,
     EvidenceGroundingResult,
 )

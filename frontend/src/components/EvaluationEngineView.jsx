@@ -74,9 +74,9 @@ export default function EvaluationEngineView({
       status: accessData?.status || "not_evaluated",
       summary: accessData?.note || accessData?.summary || "Computes English readability, sentence complexity, and administrative jargon.",
       metrics: [
-        { label: "Flesch Reading Ease", val: accessData?.metrics?.flesch_reading_ease ?? "N/A" },
-        { label: "Grade Level", val: accessData?.metrics?.flesch_kincaid_grade ?? "N/A" },
-        { label: "Jargon / Acronyms", val: accessData?.metrics?.administrative_jargon_count ?? "N/A" },
+        { label: "Flesch Reading Ease", val: (accessData?.proxy_metrics || accessData?.metrics)?.flesch_reading_ease ?? "N/A" },
+        { label: "Grade Level", val: (accessData?.proxy_metrics || accessData?.metrics)?.flesch_kincaid_grade ?? "N/A" },
+        { label: "Jargon / Acronyms", val: (accessData?.proxy_metrics || accessData?.metrics)?.unexplained_acronyms?.length ?? (accessData?.proxy_metrics || accessData?.metrics)?.administrative_jargon_count ?? "N/A" },
       ],
       note: "Readability proxies only. Actual citizen comprehension strictly remains not_evaluated pending empirical citizen studies.",
     },
