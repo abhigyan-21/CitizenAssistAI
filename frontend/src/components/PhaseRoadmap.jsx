@@ -39,20 +39,13 @@ export const PHASES = [
   {
     id: 6,
     num: "06",
-    shortName: "Evaluation Engine",
-    title: "CDTM Evaluation Engine",
-    purpose: "Execute independent evaluation across all five CDTM dimensions without calculating a composite score.",
+    shortName: "CDTM Dashboard",
+    title: "CDTM Evaluation Dashboard",
+    purpose: "Inspect independent dimension cards, evidentiary audit trails, and controlled research failure demonstrations.",
   },
   {
     id: 7,
     num: "07",
-    shortName: "CDTM Dashboard",
-    title: "Multidimensional Dashboard",
-    purpose: "Inspect independent dimension cards, evidentiary metrics, and controlled research failure demonstrations.",
-  },
-  {
-    id: 8,
-    num: "08",
     shortName: "Comparative Demo",
     title: "Basic vs. CDTM Showcase",
     purpose: "Demonstrate side-by-side contrast between unverified generative AI and audited CDTM governance.",
@@ -84,9 +77,8 @@ export default function PhaseRoadmap({
       case 5:
         return translationResult ? "completed" : (documentResult ? "ready" : "pending");
       case 6:
-      case 7:
         return evaluationReport ? "completed" : (documentResult ? "ready" : "pending");
-      case 8:
+      case 7:
         return (qaResultBasic && qaResultCDTM) ? "completed" : (hasAsked ? "ready" : "pending");
       default:
         return "pending";
@@ -98,7 +90,7 @@ export default function PhaseRoadmap({
       <div className="roadmap-header-row">
         <div className="roadmap-badge-group">
           <span className="roadmap-tag">RESEARCH ROADMAP</span>
-          <span className="roadmap-sub">8-Phase Guided Demonstration</span>
+          <span className="roadmap-sub">7-Phase Guided Demonstration</span>
         </div>
         <div className="roadmap-legend">
           <span className="legend-item"><span className="legend-dot dot-completed"></span> Completed</span>

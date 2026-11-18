@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
+  FileCode,
 } from "lucide-react";
 import DimensionCard from "./DimensionCard";
 import ResearchDemoControls from "./ResearchDemoControls";
@@ -27,6 +28,7 @@ export default function CDTMDashboard({
   isRefreshing,
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [showRawJson, setShowRawJson] = useState(false);
 
   return (
     <section className="cdtm-dashboard-container">
@@ -127,6 +129,29 @@ export default function CDTMDashboard({
 
           {/* Research Demonstration Controls */}
           <ResearchDemoControls documentId={documentId} />
+
+          {/* Collapsible Raw API Report JSON */}
+          {evaluationReport && (
+            <div className="workbench-collapsible-section" style={{ marginTop: "16px" }}>
+              <button
+                type="button"
+                className="btn-toggle-collapsible"
+                onClick={() => setShowRawJson(!showRawJson)}
+              >
+                <FileCode size={14} />
+                <span>Inspect Raw CDTM Evaluation Engine JSON Response</span>
+                {showRawJson ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              </button>
+
+              {showRawJson && (
+                <div className="collapsible-drawer-content">
+                  <pre className="raw-json-block">
+                    {JSON.stringify(evaluationReport, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Mandatory Methodological Disclaimer */}
           <footer className="cdtm-dashboard-footer">

@@ -13,13 +13,12 @@ import PhaseFooterNav from "./components/PhaseFooterNav";
 import PhasePromptDocRequired from "./components/PhasePromptDocRequired";
 import SemanticFidelityView from "./components/SemanticFidelityView";
 import CrossLingualView from "./components/CrossLingualView";
-import EvaluationEngineView from "./components/EvaluationEngineView";
 import ComparativeShowcaseView from "./components/ComparativeShowcaseView";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
 export default function App() {
-  // Navigation: 8-Phase Guided Walkthrough
+  // Navigation: 7-Phase Guided Walkthrough
   const [activePhase, setActivePhase] = useState(1);
 
   // Demo Mode (Toggleable via Masthead Book Icon)
@@ -380,7 +379,7 @@ export default function App() {
         <PhaseHeader
           activePhase={activePhase}
           onPrevious={() => setActivePhase((p) => Math.max(1, p - 1))}
-          onNext={() => setActivePhase((p) => Math.min(8, p + 1))}
+          onNext={() => setActivePhase((p) => Math.min(7, p + 1))}
           documentResult={result}
         />
 
@@ -468,7 +467,7 @@ export default function App() {
                     onScrollToEvidence={scrollToEvidence}
                     filename={result.filename}
                     documentId={result.document_id}
-                    onOpenComparison={() => setActivePhase(8)}
+                    onOpenComparison={() => setActivePhase(7)}
                   />
                 </div>
               )}
@@ -508,21 +507,9 @@ export default function App() {
                 </div>
               )}
 
-              {/* PHASE 6: CDTM Evaluation Engine */}
+              {/* PHASE 6: CDTM Multidimensional Evaluation Dashboard */}
               {activePhase === 6 && (
                 <div className="phase-view phase-6-view civic-card">
-                  <EvaluationEngineView
-                    documentId={result.document_id}
-                    evaluationReport={evaluationReport}
-                    onRefresh={() => fetchEvaluation(result.document_id, demoMode)}
-                    isRefreshing={isRefreshingEval}
-                  />
-                </div>
-              )}
-
-              {/* PHASE 7: CDTM Multidimensional Dashboard */}
-              {activePhase === 7 && (
-                <div className="phase-view phase-7-view civic-card">
                   <CDTMDashboard
                     documentId={result.document_id}
                     evaluationReport={evaluationReport}
@@ -532,9 +519,9 @@ export default function App() {
                 </div>
               )}
 
-              {/* PHASE 8: Basic vs. CDTM Comparative Demonstration Showcase */}
-              {activePhase === 8 && (
-                <div className="phase-view phase-8-view civic-card">
+              {/* PHASE 7: Basic vs. CDTM Comparative Demonstration Showcase */}
+              {activePhase === 7 && (
+                <div className="phase-view phase-7-view civic-card">
                   <ComparativeShowcaseView
                     documentId={result.document_id}
                     question={askQuery}
@@ -557,7 +544,7 @@ export default function App() {
         {/* Phase Bottom Navigation CTA: Proceed to Next Phase */}
         <PhaseFooterNav
           activePhase={activePhase}
-          onProceed={() => setActivePhase((p) => Math.min(8, p + 1))}
+          onProceed={() => setActivePhase((p) => Math.min(7, p + 1))}
           onSelectPhase={(p) => setActivePhase(p)}
         />
       </main>

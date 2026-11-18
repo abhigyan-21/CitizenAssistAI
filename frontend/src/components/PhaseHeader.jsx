@@ -13,7 +13,7 @@ export default function PhaseHeader({
     <header className="phase-header-shell">
       <div className="phase-header-main">
         <div className="phase-meta-line">
-          <span className="phase-step-indicator">PHASE {current.num} OF 08</span>
+          <span className="phase-step-indicator">PHASE {current.num} OF 07</span>
           {documentResult && (
             <span className="phase-doc-chip" title={documentResult.filename}>
               <FileText size={12} />
@@ -42,7 +42,7 @@ export default function PhaseHeader({
           type="button"
           className="btn btn-nav-step"
           onClick={onNext}
-          disabled={activePhase >= 8}
+          disabled={activePhase >= 7}
           aria-label="Next Phase"
         >
           <span>Next</span>

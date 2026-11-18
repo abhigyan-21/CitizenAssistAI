@@ -16,13 +16,12 @@ A research prototype that helps citizens understand Indian administrative and go
 | **Phase 3** | **Evidence-Grounded Q&A** | Multi-provider architecture (Groq primary, Gemini alternate), strict prompt grounding, server-side citation validation, ungrounded claim abstention. | ✅ Complete |
 | **Phase 4** | **Semantic Fidelity & Simplification** | Two-call architecture: Call 1 plain-language simplification; Call 2 independent reviewer for condition & statutory rule preservation. | ✅ Complete |
 | **Phase 5** | **Cross-Lingual Fidelity (Hindi)** | English-to-Hindi Devanagari translation, deterministic numeral/date/term preservation, secondary semantic audit, and plain *सरल हिंदी* simplification. | ✅ Complete |
-| **Phase 6** | **CDTM Evaluation Engine** | Evaluators across all 5 CDTM dimensions: Source Fidelity, Semantic Fidelity, Evidence Grounding, Cross-Lingual Fidelity, Accessibility. | ✅ Complete |
-| **Phase 7** | **Interactive CDTM Dashboard** | Per-dimension status metrics (Verified, Potential Issue, Requires Human Review), controlled failure demonstrations, audit trail. | ✅ Complete |
-| **Phase 8** | **Comparative Demonstration Showcase** | Side-by-side comparison of Naive/Basic RAG vs. CDTM-Guided Governance, highlighting hallucination interception and citation grounding. | ✅ Complete |
-| **Phase 9** | **Empirical Validation & User Study** | Structured empirical user evaluation on authentic public schemes (PM-KISAN, Sukanya Samriddhi). | ⬜ Planned |
+| **Phase 6** | **CDTM Evaluation Dashboard** | Evaluators across all 5 CDTM dimensions (Source Fidelity, Semantic Fidelity, Evidence Grounding, Cross-Lingual, Accessibility) with interactive failure testing and raw JSON inspection. | ✅ Complete |
+| **Phase 7** | **Comparative Demonstration Showcase** | Side-by-side comparison of Naive/Basic RAG vs. CDTM-Guided Governance, highlighting hallucination interception and citation grounding. | ✅ Complete |
+| **Phase 8** | **Empirical Validation & User Study** | Structured empirical user evaluation on authentic public schemes (PM-KISAN, Sukanya Samriddhi). | ⬜ Planned |
 
 **Automated Tests:** **114 backend unit tests**, 100% passing.  
-**Frontend Interface:** Modern 8-Phase Guided Walkthrough UI with step-by-step navigation, interactive workbenches, and Civic Editorial design system.
+**Frontend Interface:** Modern 7-Phase Guided Walkthrough UI with step-by-step navigation, interactive workbenches, and Civic Editorial design system.
 
 ---
 
@@ -134,9 +133,8 @@ Configure `backend/.env` (reference `backend/.env.example`):
 3. **Phase 3 (Grounded Q&A):** Ask citizen questions; observe server-side citation validation, clickable evidence badges, and explicit abstentions for ungrounded claims.
 4. **Phase 4 (Semantic Fidelity):** Plain-language simplification alongside independent Call 2 condition preservation verification.
 5. **Phase 5 (Cross-Lingual Fidelity):** Devanagari translation with deterministic number/date preservation, plus plain *सरल हिंदी* simplification.
-6. **Phase 6 (CDTM Evaluation Engine):** Run multi-dimensional evaluators against document transformations.
-7. **Phase 7 (CDTM Dashboard):** Comprehensive overview of Trustworthiness Dimensions, including controlled failure demonstration audits.
-8. **Phase 8 (Comparative Showcase):** Direct comparison showing how standard naive LLM/RAG hallucinates or drops statutory conditions compared to CDTM-guided governance.
+6. **Phase 6 (CDTM Evaluation Dashboard):** Comprehensive overview of all 5 Trustworthiness Dimensions, expandable evidence audit trails, failure demonstration controls, and raw JSON inspection.
+7. **Phase 7 (Comparative Showcase):** Direct side-by-side comparison showing how standard naive LLM/RAG hallucinates or drops statutory conditions compared to CDTM-guided governance.
 
 ---
 

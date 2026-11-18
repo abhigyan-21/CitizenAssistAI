@@ -5,21 +5,20 @@ const PROCEED_LABELS = {
   2: "Proceed to AI-Assisted Q&A →",
   3: "Proceed to Semantic Fidelity →",
   4: "Proceed to Cross-Lingual Fidelity →",
-  5: "Proceed to CDTM Evaluation Engine →",
-  6: "Proceed to CDTM Multidimensional Dashboard →",
-  7: "Proceed to Basic vs CDTM Comparative Showcase →",
-  8: "Restart Demonstration Walkthrough ↺",
+  5: "Proceed to CDTM Evaluation Dashboard →",
+  6: "Proceed to Basic vs CDTM Comparative Showcase →",
+  7: "Restart Demonstration Walkthrough ↺",
 };
 
 export default function PhaseFooterNav({ activePhase, onProceed, onSelectPhase }) {
-  const isFinal = activePhase === 8;
+  const isFinal = activePhase === 7;
   const label = PROCEED_LABELS[activePhase] || "Next Phase →";
 
   return (
     <footer className="phase-footer-nav">
       <div className="phase-footer-left">
         <span className="phase-footer-step-note">
-          Phase {activePhase} of 8 · Inspection View Active
+          Phase {activePhase} of 7 · Inspection View Active
         </span>
       </div>
 
