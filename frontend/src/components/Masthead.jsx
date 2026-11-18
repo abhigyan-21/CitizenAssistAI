@@ -1,4 +1,4 @@
-import { BookOpen, Sparkles } from "lucide-react";
+import { BookOpen } from "lucide-react";
 
 export default function Masthead({ demoMode = false, onToggleDemoMode }) {
   return (
@@ -29,22 +29,6 @@ export default function Masthead({ demoMode = false, onToggleDemoMode }) {
           </div>
         </div>
         <div className="masthead-meta">
-          {demoMode && (
-            <span
-              className="meta-tag"
-              style={{
-                background: "rgba(22, 163, 74, 0.15)",
-                color: "#16a34a",
-                fontWeight: 600,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-            >
-              <Sparkles size={11} /> Demo Mode
-            </span>
-          )}
-          {demoMode && <span className="meta-divider">|</span>}
           <span className="meta-tag">Research Demonstrator</span>
           <span className="meta-divider">|</span>
           <span className="meta-tag">CDTM-Guided</span>
