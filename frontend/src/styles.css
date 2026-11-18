@@ -356,6 +356,12 @@ body {
   color: var(--c-danger);
 }
 
+.alert-success {
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
 .alert-amber {
   background-color: var(--c-amber-soft);
   border: 1px solid var(--c-amber-border);

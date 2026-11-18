@@ -22,6 +22,21 @@ export default function App() {
   // Navigation: 8-Phase Guided Walkthrough
   const [activePhase, setActivePhase] = useState(1);
 
+  // Demo Mode (Toggleable via Masthead Book Icon)
+  const [demoMode, setDemoMode] = useState(false);
+  const [demoAlert, setDemoAlert] = useState("");
+
+  function handleToggleDemoMode() {
+    const next = !demoMode;
+    setDemoMode(next);
+    if (next) {
+      setDemoAlert("demo mode active");
+      setTimeout(() => setDemoAlert(""), 6000);
+    } else {
+      setDemoAlert("");
+    }
+  }
+
   // Phase 01 — Upload & Extraction
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
@@ -294,7 +309,50 @@ export default function App() {
 
   return (
     <div className="app-canvas">
-      <Masthead />
+      <Masthead demoMode={demoMode} onToggleDemoMode={handleToggleDemoMode} />
+
+      {demoAlert && (
+        <div
+          className="civic-alert alert-success"
+          role="status"
+          aria-live="polite"
+          style={{
+            margin: "8px auto 0 auto",
+            maxWidth: "1280px",
+            width: "calc(100% - 48px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderRadius: "6px",
+            padding: "8px 16px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span className="alert-title" style={{ margin: 0, textTransform: "capitalize" }}>
+              {demoAlert}
+            </span>
+            <span className="alert-message" style={{ margin: 0 }}>
+              — Using verified section-matched presentation fixtures.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDemoAlert("")}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#065f46",
+              cursor: "pointer",
+              fontSize: "18px",
+              lineHeight: 1,
+              padding: "0 4px",
+            }}
+            aria-label="Dismiss alert"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* 8-Phase Guided Walkthrough Roadmap */}
       <PhaseRoadmap
@@ -420,6 +478,7 @@ export default function App() {
                     simplificationResult={simplificationResult}
                     onSimplificationComplete={handleSimplificationComplete}
                     onNavigateToTranslation={() => setActivePhase(5)}
+                    demoMode={demoMode}
                   />
                 </div>
               )}
@@ -437,6 +496,7 @@ export default function App() {
                     onTranslationComplete={handleTranslationComplete}
                     simplificationResult={simplificationResult}
                     onNavigateToSimplification={() => setActivePhase(4)}
+                    demoMode={demoMode}
                   />
                 </div>
               )}

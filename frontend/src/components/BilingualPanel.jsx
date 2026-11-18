@@ -19,7 +19,7 @@ const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
  *   - Controlled demo notification when applicable
  */
 
-export default function BilingualPanel({ result, documentId, onClose }) {
+export default function BilingualPanel({ result, documentId, onClose, demoMode = false }) {
   if (!result) return null;
 
   const {
@@ -40,14 +40,15 @@ export default function BilingualPanel({ result, documentId, onClose }) {
     if (!documentId || !chunk_id) return;
     setIsSimplifyingHindi(true);
     try {
-      const res = await fetch(
-        `${API}/api/documents/${documentId}/chunks/${chunk_id}/simplify-hindi`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ hindi_text: translated_hindi }),
-        }
-      );
+      const isDemo = demoMode || controlled_demo;
+      const url = `${API}/api/documents/${documentId}/chunks/${chunk_id}/simplify-hindi${
+        isDemo ? "?demo=true" : ""
+      }`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hindi_text: translated_hindi }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Hindi simplification failed.");
       setSimplifiedHindiData(data);

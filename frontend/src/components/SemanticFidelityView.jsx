@@ -13,6 +13,7 @@ export default function SemanticFidelityView({
   simplificationResult,
   onSimplificationComplete,
   onNavigateToTranslation,
+  demoMode = false,
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -28,10 +29,10 @@ export default function SemanticFidelityView({
     setError("");
 
     try {
-      const res = await fetch(
-        `${API}/api/documents/${documentId}/chunks/${activeChunk.chunk_id}/simplify`,
-        { method: "POST" }
-      );
+      const url = `${API}/api/documents/${documentId}/chunks/${activeChunk.chunk_id}/simplify${
+        demoMode ? "?demo=true" : ""
+      }`;
+      const res = await fetch(url, { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Simplification request failed.");
       onSimplificationComplete(data);

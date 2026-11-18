@@ -14,6 +14,7 @@ export default function CrossLingualView({
   onTranslationComplete,
   simplificationResult,
   onNavigateToSimplification,
+  demoMode = false,
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -33,9 +34,12 @@ export default function CrossLingualView({
     setError("");
 
     const isSimplified = translateVariant === "simplified" && hasValidSimplification;
-    const url = `${API}/api/documents/${documentId}/chunks/${activeChunk.chunk_id}/translate?target_language=hi${
+    let url = `${API}/api/documents/${documentId}/chunks/${activeChunk.chunk_id}/translate?target_language=hi${
       isSimplified ? "&input_variant=simplified" : ""
     }`;
+    if (demoMode) {
+      url += "&demo=true";
+    }
     const options = {
       method: "POST",
       headers: isSimplified ? { "Content-Type": "application/json" } : {},
@@ -184,6 +188,7 @@ export default function CrossLingualView({
                 result={translationResult}
                 documentId={documentId}
                 onClose={() => onTranslationComplete(null)}
+                demoMode={demoMode}
               />
             ) : busy ? (
               <div className="workbench-loading-state">
